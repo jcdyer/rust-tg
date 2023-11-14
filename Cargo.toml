@@ -1,0 +1,16 @@
+[package]
+name = "tg"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+tg-sys = "0.1.0"
+
+[features]
+default = ["atomics"]
+atomics = ["tg-sys/atomics"]
+
+[patch.crates-io]
+tg-sys = { path = "../tg-sys" }
