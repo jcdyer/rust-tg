@@ -16,14 +16,33 @@
 use std::alloc::{handle_alloc_error, Layout};
 
 use crate::Point;
-use tg_sys::{
-    tg_geom,
-    GeometryConstructors,
-};
+use tg_sys::{tg_geom, GeometryConstructors};
 
 #[derive(Debug)]
 pub struct Geom {
     inner: *mut tg_geom,
+}
+
+// GeometryConstructors
+impl Geom {
+    /// Create a new geometry from the current one by performing a deep copy.
+    ///
+    /// The tg C library calls this `tg_geom_copy`, but the semantics don't
+    /// match rust expectations for the term "copy", so we call it "duplicate"
+    /// instead.
+    pub fn duplicate(&self) -> Self {
+        Self {
+            inner: unsafe { GeometryConstructors::tg_geom_copy(self.inner) },
+        }
+    }
+}
+
+impl Clone for Geom {
+    fn clone(&self) -> Self {
+        Self {
+            inner: unsafe { GeometryConstructors::tg_geom_clone(self.inner) },
+        }
+    }
 }
 
 impl From<Point> for Geom {

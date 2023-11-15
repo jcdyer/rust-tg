@@ -1,17 +1,16 @@
-pub use point::Point;
-pub use segment::Segment;
-pub use rect::Rect;
 pub use geom::Geom;
 pub use line::Line;
+pub use point::Point;
+pub use rect::Rect;
+pub use segment::Segment;
 
-
-mod point;
-mod segment;
-mod rect;
-mod line;
-mod ring;
-mod poly;
 mod geom;
+mod line;
+mod point;
+mod poly;
+mod rect;
+mod ring;
+mod segment;
 
 use tg_sys::tg_index;
 

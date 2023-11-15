@@ -9,4 +9,3 @@
 //! - [ ] Add RingFuncs
 //! - [ ] Standard traits
 //! - [ ] Documentation
-
