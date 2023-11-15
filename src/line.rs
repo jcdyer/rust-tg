@@ -2,11 +2,12 @@
 //!
 //! - [x] Create type and constructors
 //! - [x] Make Send + Sync
-//! - [ ] impl Drop
-//! - [ ] Create accessors
+//! - [x] impl Drop
+//! - [x] Create accessors
 //! - [ ] Add tg_sys conversions
 //! - [ ] Add Geom conversions
-//! - [ ] Add LineFuncs
+//! - [x] Add LineFuncs
+//! - [ ] Add LineFuncs "iterators"
 //! - [ ] Standard traits
 //! - [ ] Documentation
 
