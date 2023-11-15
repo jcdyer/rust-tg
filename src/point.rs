@@ -3,12 +3,15 @@
 //! - [x] Create type and field accessors
 //! - [x] Add tg_sys conversions
 //! - [x] Add PointFuncs
-//! - [ ] Standard traits
+//! - [x] Standard traits
 //! - [ ] Documentation
+//! - [ ] Serde traits
 
-use tg_sys::{tg_point, PointFuncs};
+use core::fmt;
 
-use crate::Rect;
+use tg_sys::{tg_point, GeometryConstructors, GeometryConstructorsEx, PointFuncs};
+
+use crate::{Geom, Rect};
 
 #[repr(transparent)]
 #[derive(Clone, Copy)]
@@ -24,12 +27,20 @@ impl Point {
         }
     }
 
+    pub fn into_raw(self) -> tg_point {
+        self.inner
+    }
+
+    pub fn from_raw(raw: tg_point) -> Point {
+        Point { inner: raw }
+    }
+
     pub fn x(self) -> f64 {
-        self.inner.x
+        self.into_raw().x
     }
 
     pub fn y(self) -> f64 {
-        self.inner.y
+        self.into_raw().y
     }
 
     pub fn set_x(&mut self, x: f64) {
@@ -51,25 +62,61 @@ impl Point {
     }
 }
 
-/// Operations defined in PointFuncs in tg.h
+/// Operations defined in PointFuncs in tg.h and conversions
 impl Point {
     pub fn rect(self) -> Rect {
-        unsafe { PointFuncs::tg_point_rect(self.inner).into() }
+        unsafe { PointFuncs::tg_point_rect(self.into_raw()).into() }
     }
 
     pub fn intersects_rect(self, rect: Rect) -> bool {
-        unsafe { PointFuncs::tg_point_intersects_rect(self.inner, rect.into()) }
+        unsafe { PointFuncs::tg_point_intersects_rect(self.into_raw(), rect.into()) }
+    }
+
+    pub fn geom(self) -> Geom {
+        unsafe { GeometryConstructors::tg_geom_new_point(self.into_raw()) }.into()
+    }
+
+    pub fn geom_with_m(self, m: f64) -> Geom {
+        unsafe { GeometryConstructorsEx::tg_geom_new_point_m(self.into_raw(), m) }.into()
+    }
+
+    pub fn geom_with_z(self, z: f64) -> Geom {
+        unsafe { GeometryConstructorsEx::tg_geom_new_point_z(self.into_raw(), z) }.into()
+    }
+
+    pub fn geom_with_zm(self, z: f64, m: f64) -> Geom {
+        unsafe { GeometryConstructorsEx::tg_geom_new_point_zm(self.into_raw(), z, m) }.into()
+    }
+}
+
+impl fmt::Debug for Point {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Point")
+            .field("x", &self.x())
+            .field("y", &self.y())
+            .finish()
+    }
+}
+
+impl Default for Point {
+    fn default() -> Self {
+        Point::new(0., 0.)
+    }
+}
+impl PartialEq for Point {
+    fn eq(&self, other: &Self) -> bool {
+        self.x() == other.x() && self.y() == other.y()
     }
 }
 
 impl From<Point> for tg_point {
     fn from(value: Point) -> tg_point {
-        value.inner
+        value.into_raw()
     }
 }
 
 impl From<tg_point> for Point {
     fn from(value: tg_point) -> Point {
-        Point { inner: value }
+        Point::from_raw(value)
     }
 }

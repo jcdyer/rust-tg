@@ -4,6 +4,7 @@
 //! - [ ] Make Send + Sync
 //! - [ ] impl Drop
 //! - [ ] Add GeometryConstructors
+//! - [ ] Add GeometryConstructorsEx
 //! - [ ] Add GeometryParsing
 //! - [ ] Add GeometryAccessors
 //! - [ ] Add GeometryWriting
@@ -13,9 +14,8 @@
 //! - [ ] Standard traits
 //! - [ ] Documentation
 
-use std::alloc::{handle_alloc_error, Layout};
+use std::alloc::{Layout, handle_alloc_error};
 
-use crate::Point;
 use tg_sys::{tg_geom, GeometryConstructors};
 
 #[derive(Debug)]
@@ -45,21 +45,20 @@ impl Clone for Geom {
     }
 }
 
-impl From<Point> for Geom {
-    fn from(value: Point) -> Self {
-        let geom = unsafe { GeometryConstructors::tg_geom_new_point(value.into()) };
-        if geom.is_null() {
-            let layout = Layout::new::<tg_geom>();
-            handle_alloc_error(layout);
-        }
-        Geom { inner: geom }
-    }
-}
-
 impl Drop for Geom {
     fn drop(&mut self) {
         unsafe {
             GeometryConstructors::tg_geom_free(self.inner);
         }
+    }
+}
+
+impl From<*mut tg_geom> for Geom {
+    fn from(value: *mut tg_geom) -> Self {
+        if value.is_null() {
+            let layout = Layout::new::<tg_geom>();
+            handle_alloc_error(layout);
+        }
+        Geom { inner: value }
     }
 }

@@ -3,9 +3,13 @@
 //! - [x] Create type and field accessors
 //! - [x] Add tg_sys conversions
 //! - [x] Add SegmentFuncs
-//! - [ ] Standard traits
+//! - [x] Standard traits
+//! - [ ] Serde traits
+//! - [ ] Should reversed segments be equal?
 //! - [ ] Documentation
 //!
+use core::fmt;
+
 use tg_sys::{tg_segment, SegmentFuncs};
 
 use crate::{Point, Rect};
@@ -27,6 +31,14 @@ impl Segment {
         }
     }
 
+    pub fn into_raw(self) -> tg_segment {
+        self.inner
+    }
+
+    pub fn from_raw(value: tg_segment) -> Segment {
+        Segment { inner: value }
+    }
+
     pub fn a(self) -> Point {
         self.inner.a.into()
     }
@@ -36,11 +48,11 @@ impl Segment {
     }
 
     pub fn set_a(&mut self, a: Point) {
-        self.inner.a = a.into();
+        self.inner.a = a.into_raw();
     }
 
     pub fn set_b(&mut self, b: Point) {
-        self.inner.b = b.into();
+        self.inner.b = b.into_raw();
     }
 
     pub fn with_a(mut self, a: Point) -> Segment {
@@ -51,29 +63,49 @@ impl Segment {
     pub fn with_b(mut self, b: Point) -> Segment {
         self.set_b(b);
         self
-
     }
 }
 
 /// Operations defined in SegmentFuncs in tg.h
 impl Segment {
     pub fn rect(self) -> Rect {
-        unsafe { SegmentFuncs::tg_segment_rect(self.inner) }.into()
+        unsafe { SegmentFuncs::tg_segment_rect(self.into_raw()) }.into()
     }
 
     pub fn intersects_segment(self, segment: Segment) -> bool {
-        unsafe { SegmentFuncs::tg_segment_intersects_segment(self.inner, segment.inner) }
+        unsafe { SegmentFuncs::tg_segment_intersects_segment(self.into_raw(), segment.into_raw()) }
+    }
+}
+
+impl Default for Segment {
+    fn default() -> Self {
+        Self::new(Point::default(), Point::default())
+    }
+}
+
+impl fmt::Debug for Segment {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.debug_struct("Segment")
+            .field("a", &self.a())
+            .field("b", &self.b())
+            .finish()
+    }
+}
+
+impl PartialEq for Segment {
+    fn eq(&self, other: &Self) -> bool {
+        self.a() == other.a() && self.b() == other.b()
     }
 }
 
 impl From<Segment> for tg_segment {
     fn from(value: Segment) -> tg_segment {
-        value.inner
+        value.into_raw()
     }
 }
 
 impl From<tg_segment> for Segment {
     fn from(value: tg_segment) -> Segment {
-        Segment { inner: value }
+        Segment::from_raw(value)
     }
 }
