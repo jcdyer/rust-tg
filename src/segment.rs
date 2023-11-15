@@ -31,7 +31,7 @@ impl Segment {
         }
     }
 
-    pub fn into_raw(self) -> tg_segment {
+    pub fn to_raw(self) -> tg_segment {
         self.inner
     }
 
@@ -48,11 +48,11 @@ impl Segment {
     }
 
     pub fn set_a(&mut self, a: Point) {
-        self.inner.a = a.into_raw();
+        self.inner.a = a.to_raw();
     }
 
     pub fn set_b(&mut self, b: Point) {
-        self.inner.b = b.into_raw();
+        self.inner.b = b.to_raw();
     }
 
     pub fn with_a(mut self, a: Point) -> Segment {
@@ -69,11 +69,11 @@ impl Segment {
 /// Operations defined in SegmentFuncs in tg.h
 impl Segment {
     pub fn rect(self) -> Rect {
-        unsafe { SegmentFuncs::tg_segment_rect(self.into_raw()) }.into()
+        unsafe { SegmentFuncs::tg_segment_rect(self.to_raw()) }.into()
     }
 
     pub fn intersects_segment(self, segment: Segment) -> bool {
-        unsafe { SegmentFuncs::tg_segment_intersects_segment(self.into_raw(), segment.into_raw()) }
+        unsafe { SegmentFuncs::tg_segment_intersects_segment(self.to_raw(), segment.to_raw()) }
     }
 }
 
@@ -100,7 +100,7 @@ impl PartialEq for Segment {
 
 impl From<Segment> for tg_segment {
     fn from(value: Segment) -> tg_segment {
-        value.into_raw()
+        value.to_raw()
     }
 }
 

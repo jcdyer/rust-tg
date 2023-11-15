@@ -27,7 +27,7 @@ impl Point {
         }
     }
 
-    pub fn into_raw(self) -> tg_point {
+    pub fn to_raw(self) -> tg_point {
         self.inner
     }
 
@@ -36,11 +36,11 @@ impl Point {
     }
 
     pub fn x(self) -> f64 {
-        self.into_raw().x
+        self.to_raw().x
     }
 
     pub fn y(self) -> f64 {
-        self.into_raw().y
+        self.to_raw().y
     }
 
     pub fn set_x(&mut self, x: f64) {
@@ -65,27 +65,27 @@ impl Point {
 /// Operations defined in PointFuncs in tg.h and conversions
 impl Point {
     pub fn rect(self) -> Rect {
-        unsafe { PointFuncs::tg_point_rect(self.into_raw()).into() }
+        unsafe { PointFuncs::tg_point_rect(self.to_raw()).into() }
     }
 
     pub fn intersects_rect(self, rect: Rect) -> bool {
-        unsafe { PointFuncs::tg_point_intersects_rect(self.into_raw(), rect.into()) }
+        unsafe { PointFuncs::tg_point_intersects_rect(self.to_raw(), rect.into()) }
     }
 
     pub fn geom(self) -> Geom {
-        unsafe { GeometryConstructors::tg_geom_new_point(self.into_raw()) }.into()
+        unsafe { GeometryConstructors::tg_geom_new_point(self.to_raw()) }.into()
     }
 
     pub fn geom_with_m(self, m: f64) -> Geom {
-        unsafe { GeometryConstructorsEx::tg_geom_new_point_m(self.into_raw(), m) }.into()
+        unsafe { GeometryConstructorsEx::tg_geom_new_point_m(self.to_raw(), m) }.into()
     }
 
     pub fn geom_with_z(self, z: f64) -> Geom {
-        unsafe { GeometryConstructorsEx::tg_geom_new_point_z(self.into_raw(), z) }.into()
+        unsafe { GeometryConstructorsEx::tg_geom_new_point_z(self.to_raw(), z) }.into()
     }
 
     pub fn geom_with_zm(self, z: f64, m: f64) -> Geom {
-        unsafe { GeometryConstructorsEx::tg_geom_new_point_zm(self.into_raw(), z, m) }.into()
+        unsafe { GeometryConstructorsEx::tg_geom_new_point_zm(self.to_raw(), z, m) }.into()
     }
 }
 
@@ -111,7 +111,7 @@ impl PartialEq for Point {
 
 impl From<Point> for tg_point {
     fn from(value: Point) -> tg_point {
-        value.into_raw()
+        value.to_raw()
     }
 }
 

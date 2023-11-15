@@ -30,7 +30,7 @@ impl Rect {
         }
     }
 
-    pub fn into_raw(self) -> tg_rect {
+    pub fn to_raw(self) -> tg_rect {
         self.inner
     }
 
@@ -39,18 +39,18 @@ impl Rect {
     }
 
     pub fn min(self) -> Point {
-        self.into_raw().min.into()
+        self.to_raw().min.into()
     }
 
     pub fn max(self) -> Point {
-        self.into_raw().max.into()
+        self.to_raw().max.into()
     }
 
     pub fn set_min(&mut self, min: Point) {
-        self.inner.min = min.into_raw();
+        self.inner.min = min.to_raw();
     }
     pub fn set_max(&mut self, max: Point) {
-        self.inner.max = max.into_raw();
+        self.inner.max = max.to_raw();
     }
     pub fn with_min(mut self, min: Point) -> Rect {
         self.set_min(min);
@@ -65,23 +65,23 @@ impl Rect {
 /// Operations defined in RectFuncs in tg.h
 impl Rect {
     pub fn center(self) -> Point {
-        unsafe { RectFuncs::tg_rect_center(self.into_raw()) }.into()
+        unsafe { RectFuncs::tg_rect_center(self.to_raw()) }.into()
     }
 
     pub fn expand(self, other: Rect) -> Rect {
-        unsafe { RectFuncs::tg_rect_expand(self.into_raw(), other.into_raw()) }.into()
+        unsafe { RectFuncs::tg_rect_expand(self.to_raw(), other.to_raw()) }.into()
     }
 
     pub fn expand_point(self, other: Point) -> Rect {
-        unsafe { RectFuncs::tg_rect_expand_point(self.into_raw(), other.into_raw()) }.into()
+        unsafe { RectFuncs::tg_rect_expand_point(self.to_raw(), other.to_raw()) }.into()
     }
 
     pub fn intersects_point(self, other: Point) -> bool {
-        unsafe { RectFuncs::tg_rect_intersects_point(self.into_raw(), other.into_raw()) }
+        unsafe { RectFuncs::tg_rect_intersects_point(self.to_raw(), other.to_raw()) }
     }
 
     pub fn intersects_rect(self, other: Rect) -> bool {
-        unsafe { RectFuncs::tg_rect_intersects_rect(self.into_raw(), other.into_raw()) }
+        unsafe { RectFuncs::tg_rect_intersects_rect(self.to_raw(), other.to_raw()) }
     }
 }
 
