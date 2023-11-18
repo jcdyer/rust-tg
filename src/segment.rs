@@ -7,7 +7,7 @@
 //! - [ ] Serde traits
 //! - [ ] Should reversed segments be equal?
 //! - [ ] Documentation
-//!
+
 use core::fmt;
 
 use tg_sys::{tg_segment, SegmentFuncs};
