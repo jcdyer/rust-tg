@@ -186,7 +186,7 @@ impl Line {
         .into()
     }
 
-    pub fn tg_line_line_search<V: LineSearchVisitor>(&self, other: &Line, visitor: &mut V) {
+    pub fn line_search<V: LineSearchVisitor>(&self, other: &Line, visitor: &mut V) {
         extern "C" fn visit<V: LineSearchVisitor>(
             a_seg: tg_segment,
             a_idx: libc::c_int,
@@ -256,6 +256,16 @@ impl Line {
             // out of memory
             abort()
         }
+    }
+
+    #[allow(unused_mut, clippy::let_and_return)]
+    pub fn simple_nearest_segment(&self, point: Point) -> Vec<Segment> {
+        let mut vec = Vec::with_capacity(self.num_segments());
+        // self.nearest_segment((
+        //     |seg: Segment, more| seg.distance(point)
+
+        // ));
+        vec
     }
 
     /// The length of the whole line (the sum of the lengths of its segments)
@@ -361,8 +371,8 @@ pub trait NearestSegmentVisitor {
 
 impl<F1, F2, F3> NearestSegmentVisitor for (F1, F2, F3)
 where
-    F1: FnMut(Segment, &mut i32) -> f64,
-    F2: FnMut(Rect, &mut i32) -> f64,
+    for<'a> F1: FnMut(Segment, &'a mut i32) -> f64,
+    for<'b> F2: FnMut(Rect, &'b mut i32) -> f64,
     F3: FnMut(Segment, f64, usize) -> bool,
 {
     fn segment_distance(&mut self, segment: Segment, more: &mut i32) -> f64 {
@@ -375,5 +385,142 @@ where
 
     fn visit(&mut self, segment: Segment, distance: f64, index: usize) -> bool {
         self.2(segment, distance, index)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use std::convert::identity;
+
+    use super::Line;
+    use crate::{line::LineSearchVisitor, Point, Rect, Segment, IndexType};
+
+    #[test]
+    fn line_search() {
+        let l1 = Line::new(&[
+            Point::new(-1., -1.),
+            Point::new(0., 0.),
+            Point::new(1., 0.),
+            Point::new(2., -1.),
+        ]);
+        let l2 = Line::new(&[
+            Point::new(-5., -0.5),
+            Point::new(5., -0.5),
+            Point::new(5., -0.25),
+            Point::new(-5., -0.25),
+        ]);
+
+        let mut intersections = Vec::new();
+        let mut intersection_visitor = |seg1: Segment, idx1, seg2, idx2| {
+            eprintln!("{seg1:?}:{idx1} {seg2:?}:{idx2}");
+            intersections.push(seg1.intersects_segment(seg2));
+            true
+        };
+        l1.line_search(&l2, &mut intersection_visitor);
+        assert!(intersections.iter().copied().all(identity));
+        assert_eq!(intersections.len(), 4);
+    }
+
+    #[test]
+    fn line_search_return_value() {
+        let l1 = Line::new(&[
+            Point::new(-1., -1.),
+            Point::new(0., 0.),
+            Point::new(1., 0.),
+            Point::new(2., -1.),
+        ]);
+        let l2 = Line::new(&[
+            Point::new(-5., -0.5),
+            Point::new(5., -0.5),
+            Point::new(5., -0.25),
+            Point::new(-5., -0.25),
+        ]);
+        let mut true_ct = 0;
+        let mut true_visitor = |_, _, _, _| {
+            true_ct += 1;
+            true
+        };
+        l1.line_search(&l2, &mut true_visitor);
+        let mut false_ct = 0;
+        let mut false_visitor = |_, _, _, _| {
+            false_ct += 1;
+            false
+        };
+        l1.line_search(&l2, &mut false_visitor);
+        assert_eq!(true_ct, 4);
+        assert_eq!(false_ct, 1);
+    }
+
+    #[test]
+    fn line_search_visitor() {
+        struct Visitor {
+            ct: usize,
+        }
+        impl LineSearchVisitor for Visitor {
+            fn visit(&mut self, _: Segment, _: usize, _: Segment, _: usize) -> bool {
+                self.ct += 1;
+                true
+            }
+        }
+        let l1 = Line::new(&[
+            Point::new(-1., -1.),
+            Point::new(0., 0.),
+            Point::new(1., 0.),
+            Point::new(2., -1.),
+        ]);
+        let l2 = Line::new(&[
+            Point::new(-5., -0.5),
+            Point::new(5., -0.5),
+            Point::new(5., -0.25),
+            Point::new(-5., -0.25),
+        ]);
+        let mut visitor = Visitor { ct: 0 };
+        l1.line_search(&l2, &mut visitor);
+        assert_eq!(visitor.ct, 4);
+    }
+
+    #[test]
+    fn points() {
+        let line = Line::new(&[
+            Point::new(-1., -1.),
+            Point::new(0., 0.),
+            Point::new(1., 0.),
+            Point::new(2., -1.),
+        ]);
+
+        let mut points = line.points();
+        assert_eq!(points.next(), Some(Point::new(-1., -1.)));
+        assert_eq!(points.next(), Some(Point::new(0., 0.)));
+        assert_eq!(points.next(), Some(Point::new(1., 0.)));
+        assert_eq!(points.next(), Some(Point::new(2., -1.)));
+        assert_eq!(points.next(), None);
+    }
+
+    #[test]
+    fn nearest_segment() {
+        let l1 = Line::new(&[
+            Point::new(-1., -1.),
+            Point::new(0., 0.),
+            Point::new(1., 0.),
+            Point::new(2., -1.),
+        ]);
+
+        let mut ct = 0;
+        l1.nearest_segment(&mut (
+            |seg: Segment, more: &mut i32| {
+                eprintln!("segment_distance:{seg:?}:{more}");
+                seg.a().x()
+            },
+            |rect: Rect, more: &mut i32| {
+                eprintln!("rectangle_distance:{rect:?}:{more}");
+                rect.min().x()
+            },
+            |seg: Segment, distance, index| {
+                eprintln!("visit:{seg:?}:{distance}:{index}");
+                ct += 1;
+                true
+            },
+        ));
+        assert_eq!(ct, 0);
     }
 }
