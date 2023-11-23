@@ -2,8 +2,9 @@ pub use geom::Geom;
 pub use line::Line;
 pub use point::Point;
 pub use rect::Rect;
+pub use ring::Ring;
 pub use segment::Segment;
-
+pub use visitors::{SearchVisitor,NearestSegmentVisitor};
 mod geom;
 mod line;
 mod point;
@@ -11,6 +12,7 @@ mod poly;
 mod rect;
 mod ring;
 mod segment;
+mod visitors;
 
 use tg_sys::tg_index;
 

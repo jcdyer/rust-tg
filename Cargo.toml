@@ -7,11 +7,11 @@ edition = "2021"
 
 [dependencies]
 libc = "0.2.150"
-tg-sys = "0.1.0"
+tg-sys = "0.1.1"
 
 [features]
 default = ["atomics"]
 atomics = ["tg-sys/atomics"]
 
 [patch.crates-io]
-tg-sys = { path = "../tg-sys" }
+#tg-sys = { path = "../tg-sys" }
