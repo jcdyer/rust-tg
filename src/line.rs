@@ -18,10 +18,11 @@ use std::{
     process::abort,
     ptr::NonNull,
 };
-
 use tg_sys::{tg_line, tg_point, tg_rect, tg_segment, GeometryConstructors, LineFuncs};
-
 use crate::{Geom, IndexType, NearestSegmentVisitor, Point, Rect, SearchVisitor, Segment};
+
+#[cfg(feature = "serde")]
+use serde::{Serialize, Deserializer, Deserialize};
 
 pub struct Line {
     inner: NonNull<tg_line>,
@@ -327,6 +328,26 @@ impl Drop for Line {
     }
 }
 
+#[cfg(feature = "serde")]
+impl Serialize for Line {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        self.points().serialize(serializer)
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> serde::Deserialize<'de> for Line {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let pts = <Vec<Point> as Deserialize>::deserialize(deserializer)?;
+        Ok(Line::new(&pts))
+    }
+}
 #[cfg(test)]
 mod tests {
     use std::convert::identity;
@@ -419,6 +440,7 @@ mod tests {
     }
 
     #[test]
+    #[allow(clippy::get_first)]
     fn points() {
         let line = Line::new(&[
             Point::new(-1., -1.),
@@ -448,11 +470,11 @@ mod tests {
         l1.nearest_segment(&mut (
             |seg: Segment, more: &mut i32| {
                 eprintln!("segment_distance:{seg:?}:{more}");
-                seg.a().x()
+                seg.a().x
             },
             |rect: Rect, more: &mut i32| {
                 eprintln!("rectangle_distance:{rect:?}:{more}");
-                rect.min().x()
+                rect.min().x
             },
             |seg: Segment, distance, index| {
                 eprintln!("visit:{seg:?}:{distance}:{index}");

@@ -7,57 +7,44 @@
 //! - [ ] Documentation
 //! - [ ] Serde traits
 
+use crate::{Geom, Rect};
 use core::fmt;
-
 use tg_sys::{tg_point, GeometryConstructors, GeometryConstructorsEx, PointFuncs};
 
-use crate::{Geom, Rect};
+#[cfg(feature = "serde")]
+use serde::{Deserializer, de::Visitor, ser::SerializeTuple, Deserialize, Serialize};
 
-#[repr(transparent)]
+#[repr(C)]
 #[derive(Clone, Copy)]
 pub struct Point {
-    inner: tg_point,
+    pub x: f64,
+    pub y: f64,
 }
 
 /// Constructors and accessor methods
 impl Point {
     pub fn new(x: f64, y: f64) -> Point {
-        Point {
-            inner: tg_point { x, y },
-        }
+        Point { x, y }
     }
 
     pub fn to_raw(self) -> tg_point {
-        self.inner
+        tg_point {
+            x: self.x,
+            y: self.y,
+        }
     }
 
     pub fn from_raw(raw: tg_point) -> Point {
-        Point { inner: raw }
-    }
-
-    pub fn x(self) -> f64 {
-        self.to_raw().x
-    }
-
-    pub fn y(self) -> f64 {
-        self.to_raw().y
-    }
-
-    pub fn set_x(&mut self, x: f64) {
-        self.inner.x = x;
-    }
-
-    pub fn set_y(&mut self, y: f64) {
-        self.inner.x = y;
+        Point { x: raw.x, y: raw.y }
     }
 
     pub fn with_x(mut self, x: f64) -> Point {
-        self.set_x(x);
+        self.x = x;
         self
     }
 
     pub fn with_y(mut self, y: f64) -> Point {
-        self.set_y(y);
+        self.y = y;
         self
     }
 }
@@ -92,8 +79,8 @@ impl Point {
 impl fmt::Debug for Point {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.debug_struct("Point")
-            .field("x", &self.x())
-            .field("y", &self.y())
+            .field("x", &self.x)
+            .field("y", &self.y)
             .finish()
     }
 }
@@ -105,7 +92,7 @@ impl Default for Point {
 }
 impl PartialEq for Point {
     fn eq(&self, other: &Self) -> bool {
-        self.x() == other.x() && self.y() == other.y()
+        self.x == other.x && self.y == other.y
     }
 }
 
@@ -118,5 +105,78 @@ impl From<Point> for tg_point {
 impl From<tg_point> for Point {
     fn from(value: tg_point) -> Point {
         Point::from_raw(value)
+    }
+}
+
+#[cfg(feature = "serde")]
+impl Serialize for Point {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let mut tuple = serializer.serialize_tuple(2)?;
+        tuple.serialize_element(&self.x)?;
+        tuple.serialize_element(&self.y)?;
+        tuple.end()
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> Deserialize<'de> for Point {
+    fn deserialize<D>(de: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        struct V;
+        impl<'de> Visitor<'de> for V {
+            type Value = Point;
+
+            fn expecting(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+                f.write_str("a pair of floating point numbers or an {x, y} object")
+            }
+
+            fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
+            where
+                A: serde::de::MapAccess<'de>,
+            {
+                let mut x = None;
+                let mut y = None;
+                while let Some((k, v)) = map.next_entry()? {
+                    if k == "x" {
+                        x = Some(v);
+                    } else if k == "y" {
+                        y = Some(v)
+                    } else {
+                        return Err(serde::de::Error::unknown_field(k, &["x", "y"]));
+                    }
+                }
+                let (x, y) = match (x, y) {
+                    (Some(x), Some(y)) => (x, y),
+                    (None, _) => return Err(serde::de::Error::missing_field("x")),
+                    (_, None) => return Err(serde::de::Error::missing_field("y")),
+                };
+
+                Ok(Point::new(x, y))
+            }
+
+            fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
+            where
+                A: serde::de::SeqAccess<'de>,
+            {
+                let pt = Point::new(
+                    seq.next_element()?
+                        .ok_or_else(|| serde::de::Error::invalid_length(0, &V))?,
+                    seq.next_element()?
+                        .ok_or_else(|| serde::de::Error::invalid_length(1, &V))?,
+                );
+                if seq.next_element::<serde::de::IgnoredAny>()?.is_some() {
+                    Err(serde::de::Error::invalid_length(3, &V))
+                } else {
+                    Ok(pt)
+                }
+            }
+        }
+
+        de.deserialize_any(V)
     }
 }

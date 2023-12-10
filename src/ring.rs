@@ -5,7 +5,7 @@
 //! - [x] impl Drop
 //! - [x] Create accessors
 //! - [x] Add tg_sys conversions
-//! - [ ] Add Geom conversions
+//! - [x] Add Geom conversions
 //! - [x] Add RingFuncs
 //! - [ ] Standard traits
 //! - [ ] Decide if PartialEq should include chirality or origin
@@ -330,12 +330,13 @@ impl Clone for Ring {
 
 impl fmt::Debug for Ring {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.debug_struct("Ring").field("inner", &self.inner).finish()
+        f.debug_struct("Ring").field("points", &self.points()).finish()
     }
 }
+
 impl PartialEq for Ring {
     fn eq(&self, other: &Self) -> bool {
-        self.inner == other.inner
+        self.points() == other.points()
     }
 }
 

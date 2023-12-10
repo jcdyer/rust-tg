@@ -13,11 +13,13 @@ categories = ["graphics", "mathematics"]
 
 [dependencies]
 libc = "0.2.150"
+serde = { version = "1", features = ["derive"], optional = true }
 tg-sys = "0.1.1"
 
 [features]
 default = ["atomics"]
 atomics = ["tg-sys/atomics"]
+serde = ["dep:serde"]
 
 [patch.crates-io]
 #tg-sys = { path = "../tg-sys" }
